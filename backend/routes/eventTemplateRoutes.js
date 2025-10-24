@@ -1,0 +1,23 @@
+// routes/eventTemplateRoutes.js
+const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const { uploadTemplate } = require("../controllers/eventTemplateController");
+
+const router = express.Router();
+
+// Multer setup
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
+
+// POST route
+router.post("/upload", upload.single("templateImage"), uploadTemplate);
+
+module.exports = router;
