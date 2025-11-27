@@ -21,9 +21,9 @@ export const verifyOtpApi = async (email, otp) => {
 };
 
 // CREATE a new company
-export const createCompanyApi = async (companyData) => {
-  const response = await axios.post(`${API_URL}/create`, companyData);
-  return response.data;
+export const createCompanyAPI = async (data) => {
+  const response = await axios.post(`${API_URL}/company/create`, data);
+  return response.data; // 👈 Must return the actual created company
 };
 
 // READ all companies
@@ -50,8 +50,8 @@ export const deleteCompanyApi = async (id) => {
   return response.data;
 };
 
-export const createCompanyAPI = (data) =>
-  axios.post(`${API_URL}/company/create`, data);
+// export const createCompanyAPI = (data) =>
+//   axios.post(`${API_URL}/company/create`, data);
 export const getAllCompaniesAPI = () => axios.get(`${API_URL}/company/`);
 export const getCompanyByIdAPI = (id) => axios.get(`${API_URL}/company/${id}`);
 export const updateCompanyAPI = (id, data) =>
@@ -76,6 +76,23 @@ export const getEmployeesByCompanyApi = async (companyId) => {
   return response.data; // returns actual data from backend
 };
 
+// ✅ Get Employee by ID
+// export const getEmployeeByIdApi = async (id) => {
+//   if (!id) throw new Error("Employee ID missing!");
+
+//   const res = await axios.get(`${API_URL}/employees/${id}`);
+//   return res.data;
+// };
+
+export const getEmployeeByIdApi = async (employeeId) => {
+  try {
+    const res = await axios.get(`${API_URL}/employees/${employeeId}`);
+    return res.data.data; // <-- you must return data.data
+  } catch (error) {
+    console.error("Error fetching employee:", error);
+    throw error;
+  }
+};
 // Update employee by ID
 export const updateEmployeeApi = async (id, updatedData) => {
   const response = await axios.put(`${API_URL}/${id}`, updatedData);
@@ -344,4 +361,120 @@ export const getAllCalendarEventsApi = async () => {
 export const getNextCustomerIdAPI = async () => {
   const response = await axios.get(`${API_URL}/company/next-id`);
   return response.data;
+};
+
+// export const saveCalendarSelectedEventsApi = async (selectedEvents) => {
+//   const companyId = localStorage.getItem("companyId");
+//   const response = await axios.post(`${API_URL}/calendareventselection/save`, {
+//     selectedEvents,
+//     companyId,
+//   });
+//   return response.data;
+// };
+
+export const saveCalendarSelectedEventsApi = async (selectedEvents) => {
+  const companyId = localStorage.getItem("companyId");
+
+  // ✅ Add companyId to each event and send as array
+  const payload = selectedEvents.map((e) => ({
+    ...e,
+    companyId,
+  }));
+
+  const response = await axios.post(
+    `${API_URL}/calendareventselection/save`,
+    payload
+  );
+  return response.data;
+};
+
+export const getCalendarSelectedEventsApi = async (companyId) => {
+  const response = await axios.get(`${API_URL}/calendareventselection/get`);
+  return response.data;
+};
+
+export const getAllCalendarSelectedEventsApi = async () => {
+  const response = await axios.get(`${API_URL}/calendareventselection/all`);
+  return response.data;
+};
+
+export const getEmployeeLevels = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/get/emplevels`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching employee levels:", error);
+    return [];
+  }
+};
+
+// ✅ Fetch all company types
+export const getCompanyTypes = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/all/companytypes`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching company types:", error);
+    return [];
+  }
+};
+
+export const getIndustries = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/all/industries`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching industries:", error);
+    return [];
+  }
+};
+
+export const getCountries = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/all/countries`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching countries:", error);
+    return [];
+  }
+};
+
+// ✅ Get all Edible Gifts
+export const getEdibleGifts = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/all/ediblegifts`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching edible gifts:", error);
+    return [];
+  }
+};
+
+// ✅ Get all Custom Gifts
+export const getCustomGifts = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/all/customgifts`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching custom gifts:", error);
+    return [];
+  }
+};
+
+// 🔹 Edited template upload API
+export const uploadEditedTemplateApi = async (eventId, file) => {
+  const formData = new FormData();
+  formData.append("editedImage", file); // backend multer field name
+
+  const res = await axios.post(
+    `${API_URL}/upload-edited-template/${eventId}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
 };

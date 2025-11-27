@@ -4,6 +4,7 @@ import {
   createEmployeeApi,
   getEmployeesByCompanyApi,
   updateEmployeeApi,
+  getEmployeeLevels,
   deleteEmployeeApi,
   bulkUploadEmployees,
 } from "../api/endpoint";
@@ -61,7 +62,7 @@ const initialFormState = {
   child2Dob: "",
 };
 
-const Employee = () => {
+const Employee = ({ isOpen, onClose, onEmployeeAdded }) => {
   const [formData, setFormData] = useState(initialFormState);
   const [employees, setEmployees] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -70,7 +71,7 @@ const Employee = () => {
   const [formModalIsOpen, setFormModalIsOpen] = useState(false);
   // ✅ Component code
   const companyId = localStorage.getItem("companyId");
-
+  const [levels, setLevels] = useState([]);
   // BULK UPLOAD
   const [uploadModal, setUploadModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -84,7 +85,13 @@ const Employee = () => {
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
   };
-
+  useEffect(() => {
+    const fetchLevels = async () => {
+      const data = await getEmployeeLevels();
+      setLevels(data);
+    };
+    fetchLevels();
+  }, []);
   const handleBulkUpload = async () => {
     if (!selectedFile) {
       alert("Please select a file first!");
@@ -148,8 +155,166 @@ const Employee = () => {
     }));
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   try {
+  //     const companyId = localStorage.getItem("companyId");
+  //     if (!companyId) {
+  //       alert("Company ID not found. Please login again.");
+  //       return;
+  //     }
+
+  //     // keep consistent with your working code
+  //     const payload = {
+  //       ...formData,
+  //       companyId: companyId, // ✅ backend expects this
+  //     };
+
+  //     if (editingId) {
+  //       // For update, backend is fine with same payload
+  //       await updateEmployeeApi(editingId, payload);
+  //       alert("Employee updated successfully!");
+  //     } else {
+  //       await createEmployeeApi(payload);
+  //       alert("Employee created successfully!");
+  //     }
+
+  //     setFormData(initialFormState);
+  //     setEditingId(null);
+  //     closeModal();
+  //     fetchEmployees();
+  //   } catch (err) {
+  //     console.error(
+  //       "Error saving employee:",
+  //       err.response?.data || err.message
+  //     );
+  //     alert("Failed to save employee.");
+  //   }
+  // };
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   // ✅ Basic front-end validation
+  //   const requiredFields = [
+  //     "firstName",
+  //     "lastName",
+  //     "employeeLevel",
+  //     "email",
+  //     "phoneNumber",
+  //     "whatsappNumber",
+  //     "gender",
+  //     "maritalStatus",
+  //     "dateOfBirth",
+  //     "dateOfJoining",
+  //   ];
+
+  //   for (const field of requiredFields) {
+  //     if (!formData[field]) {
+  //       alert(`Please fill the required field: ${field}`);
+  //       return;
+  //     }
+  //   }
+
+  //   try {
+  //     const companyId = localStorage.getItem("companyId");
+  //     if (!companyId) {
+  //       alert("Company ID not found. Please login again.");
+  //       return;
+  //     }
+
+  //     const payload = { ...formData, companyId };
+  //     await createEmployeeApi(payload);
+
+  //     alert("Employee added successfully!");
+  //     onEmployeeAdded();
+  //     onClose();
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Failed to add employee.");
+  //   }
+  // };
+
+  //   const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   // ✅ Basic front-end validation
+  //   const requiredFields = [
+  //     "firstName",
+  //     "lastName",
+  //     "employeeLevel",
+  //     "email",
+  //     "phoneNumber",
+  //     "whatsappNumber",
+  //     "gender",
+  //     "maritalStatus",
+  //     "dateOfBirth",
+  //     "dateOfJoining",
+  //   ];
+
+  //   for (const field of requiredFields) {
+  //     if (!formData[field]) {
+  //       alert(`Please fill the required field: ${field}`);
+  //       return;
+  //     }
+  //   }
+
+  //   try {
+  //     const companyId = localStorage.getItem("companyId");
+  //     if (!companyId) {
+  //       alert("Company ID not found. Please login again.");
+  //       return;
+  //     }
+
+  //     const payload = { ...formData, companyId };
+  //     const response = await createEmployeeApi(payload);
+
+  //     console.log("Create Employee API Response:", response);
+
+  //     if (response?.status === 200 || response?.status === 201) {
+  //       alert("✅ Employee added successfully!");
+  //       onEmployeeAdded();
+  //       onClose();
+  //     } else {
+  //       alert("⚠️ Employee added but response status was unexpected.");
+  //       console.warn("Unexpected response:", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("❌ Error in Employee Creation:", error);
+
+  //     // More specific feedback
+  //     if (error.response) {
+  //       alert(`Failed to add employee: ${error.response.data.message || error.message}`);
+  //     } else {
+  //       alert("Failed to add employee. Please try again.");
+  //     }
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Basic front-end validation
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "employeeLevel",
+      "email",
+      "phoneNumber",
+      "whatsappNumber",
+      "gender",
+      "maritalStatus",
+      "dateOfBirth",
+      "dateOfJoining",
+    ];
+
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        alert(`Please fill the required field: ${field}`);
+        return;
+      }
+    }
 
     try {
       const companyId = localStorage.getItem("companyId");
@@ -158,42 +323,17 @@ const Employee = () => {
         return;
       }
 
-      // keep consistent with your working code
-      const payload = {
-        ...formData,
-        companyId: companyId, // ✅ backend expects this
-      };
+      const payload = { ...formData, companyId };
+      await createEmployeeApi(payload);
 
-      if (editingId) {
-        // For update, backend is fine with same payload
-        await updateEmployeeApi(editingId, payload);
-        alert("Employee updated successfully!");
-      } else {
-        await createEmployeeApi(payload);
-        alert("Employee created successfully!");
-      }
-
-      setFormData(initialFormState);
-      setEditingId(null);
-      closeModal();
-      fetchEmployees();
-    } catch (err) {
-      console.error(
-        "Error saving employee:",
-        err.response?.data || err.message
-      );
-      alert("Failed to save employee.");
+      alert("Employee added successfully!");
+      onEmployeeAdded();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      // alert("Failed to add employee.");
     }
   };
-
-  // const handleEdit = (employee) => {
-  //   setFormData({
-  //     ...employee,
-  //     company: employee.company || localStorage.getItem("companyId") || "",
-  //   });
-  //   setEditingId(employee._id);
-  //   setModalIsOpen(true);
-  // };
 
   const handleEdit = (employee) => {
     setFormData({
@@ -326,302 +466,549 @@ const Employee = () => {
           </table>
         </div>
       </div>
+
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        shouldCloseOnOverlayClick={false} // prevents outside click close
-        shouldCloseOnEsc={false} // prevents ESC close
+        shouldCloseOnOverlayClick={false}
+        shouldCloseOnEsc={false}
         contentLabel="Employee Modal"
         className="employee-modal"
       >
-        <h3>{editingId ? "Edit Employee" : "Add New Employee"}</h3>
+        <h1>{editingId ? "Edit Employee" : "Add New Employee"}</h1>
 
         {/* Tab Buttons */}
         <div className="tab-buttons">
-          <button
-            className={activeTab === "employee" ? "active" : ""}
-            onClick={() => setActiveTab("employee")}
-          >
-            Employee Info
-          </button>
-          <button
-            className={activeTab === "event" ? "active" : ""}
-            onClick={() => setActiveTab("event")}
-          >
-            Event Info
-          </button>
-          <button
-            className={activeTab === "contact" ? "active" : ""}
-            onClick={() => setActiveTab("contact")}
-          >
-            Contact Info
-          </button>
-          <button
-            className={activeTab === "dependent" ? "active" : ""}
-            onClick={() => setActiveTab("dependent")}
-          >
-            Dependent Info
-          </button>
+          {["employee", "event", "contact", "dependent"].map((tab) => (
+            <button
+              key={tab}
+              className={activeTab === tab ? "active" : ""}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "employee"
+                ? "Employee Info"
+                : tab === "event"
+                ? "Important Date"
+                : tab === "contact"
+                ? "Contact Info"
+                : "Dependent Info"}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit}>
           {/* Employee Info Tab */}
           {activeTab === "employee" && (
-            <div className="tab-content">
-              <input
-                name="firstName"
-                placeholder="First Name"
-                onChange={handleChange}
-                value={formData.firstName}
-              />
-              <input
-                name="lastName"
-                placeholder="Last Name"
-                onChange={handleChange}
-                value={formData.lastName}
-              />
-              <input
-                name="employeeCode"
-                placeholder="Employee Code"
-                onChange={handleChange}
-                value={formData.employeeCode}
-              />
-              <select
-                name="employeeLevel"
-                onChange={handleChange}
-                value={formData.employeeLevel}
-              >
-                <option value="">Select level</option>
-                <option value="L1">L1</option>
-                <option value="L2">L2</option>
-                <option value="L3">L3</option>
-              </select>
-              <input
-                name="managerName"
-                placeholder="Manager Name"
-                onChange={handleChange}
-                value={formData.managerName}
-              />
-              <input
-                name="managerEmail"
-                placeholder="Manager Email ID"
-                onChange={handleChange}
-                value={formData.managerEmail}
-              />
-              <input
-                name="email"
-                placeholder="Employee Email ID"
-                onChange={handleChange}
-                value={formData.email}
-              />
-              <input
-                name="phoneNumber"
-                placeholder="Phone Number"
-                onChange={handleChange}
-                value={formData.phoneNumber}
-              />
-              <input
-                name="whatsappNumber"
-                placeholder="WhatsApp Number"
-                onChange={handleChange}
-                value={formData.whatsappNumber}
-              />
-              <select
-                name="gender"
-                onChange={handleChange}
-                value={formData.gender}
-              >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-              <select
-                name="maritalStatus"
-                onChange={handleChange}
-                value={formData.maritalStatus}
-              >
-                <option value="">Select marital status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-              </select>
+            <div className="tab-content grid-2col">
+              <div>
+                <label>
+                  First Name<span className="required">*</span>
+                </label>
+                <input
+                  name="firstName"
+                  onChange={handleChange}
+                  value={formData.firstName}
+                  required
+                />
+              </div>
+              <div>
+                <label>
+                  Last Name<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  name="lastName"
+                  onChange={handleChange}
+                  value={formData.lastName}
+                />
+              </div>
+
+              <div>
+                <label>
+                  Employee Code<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  placeholder="Auto Generated"
+                  name="employeeCode"
+                  value={formData.employeeCode}
+                  disabled
+                />
+              </div>
+              <div>
+                <label>
+                  Employee Level<span className="required">*</span>
+                </label>
+                <select
+                  required
+                  name="employeeLevel"
+                  onChange={handleChange}
+                  value={formData.employeeLevel}
+                >
+                  <option value="">Select level</option>
+                  {levels.map((lvl) => (
+                    <option key={lvl._id} value={lvl.level}>
+                      {lvl.level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  Employee Email ID<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  name="email"
+                  onChange={handleChange}
+                  value={formData.email}
+                />
+              </div>
+              <div>
+                <label>
+                  Phone Number<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  name="phoneNumber"
+                  onChange={handleChange}
+                  value={formData.phoneNumber}
+                />
+              </div>
+
+              <div>
+                <label>
+                  WhatsApp Number<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  name="whatsappNumber"
+                  onChange={handleChange}
+                  value={formData.whatsappNumber}
+                />
+              </div>
+              <div>
+                <label>
+                  Gender<span className="required">*</span>
+                </label>
+                <select
+                  required
+                  name="gender"
+                  onChange={handleChange}
+                  value={formData.gender}
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  Marital Status<span className="required">*</span>
+                </label>
+                <select
+                  required
+                  name="maritalStatus"
+                  onChange={handleChange}
+                  value={formData.maritalStatus}
+                >
+                  <option value="">Select marital status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Manager Name</label>
+                <input
+                  name="managerName"
+                  onChange={handleChange}
+                  value={formData.managerName}
+                />
+              </div>
+              <div>
+                <label>Manager Email ID</label>
+                <input
+                  name="managerEmail"
+                  onChange={handleChange}
+                  value={formData.managerEmail}
+                />
+              </div>
             </div>
           )}
 
-          {/* Event Info Tab */}
+          {/* Event Info */}
           {activeTab === "event" && (
-            <div className="tab-content">
-              <label>Date Of Birth</label>
-              <input
-                type="date"
-                name="dateOfBirth"
-                onChange={handleChange}
-                value={formData.dateOfBirth || ""}
-              />
-              <label>Date Of Joining</label>
-              <input
-                type="date"
-                name="dateOfJoining"
-                onChange={handleChange}
-                value={formData.dateOfJoining || ""}
-              />
-              <label>Date Of Anniversary</label>
-              <input
-                type="date"
-                name="anniversaryDate"
-                onChange={handleChange}
-                value={formData.anniversaryDate || ""}
-              />
+            <div className="tab-content grid-2col">
+              <div>
+                <label>
+                  Date of Birth<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  type="date"
+                  name="dateOfBirth"
+                  onChange={handleChange}
+                  value={formData.dateOfBirth || ""}
+                />
+              </div>
+              <div>
+                <label>
+                  Date of Joining<span className="required">*</span>
+                </label>
+                <input
+                  required
+                  type="date"
+                  name="dateOfJoining"
+                  onChange={handleChange}
+                  value={formData.dateOfJoining || ""}
+                />
+              </div>
+              <div>
+                <label>Date of Anniversary</label>
+                <input
+                  type="date"
+                  name="anniversaryDate"
+                  onChange={handleChange}
+                  value={formData.anniversaryDate || ""}
+                />
+              </div>
             </div>
           )}
 
-          {/* Contact Info Tab */}
+          {/* Contact Info */}
           {activeTab === "contact" && (
-            <div className="tab-content">
-              <input
-                name="primaryAddress"
-                placeholder="Primary Address"
-                onChange={handleChange}
-                value={formData.primaryAddress}
-              />
-              <input
-                name="secondaryAddress"
-                placeholder="Secondary Address"
-                onChange={handleChange}
-                value={formData.secondaryAddress}
-              />
-              <input
-                name="pincode"
-                placeholder="Pincode"
-                onChange={handleChange}
-                value={formData.pincode}
-              />
-              <input
-                name="city"
-                placeholder="City"
-                onChange={handleChange}
-                value={formData.city}
-              />
-              <input
-                name="state"
-                placeholder="State"
-                onChange={handleChange}
-                value={formData.state}
-              />
-              <input
-                name="country"
-                placeholder="Country"
-                onChange={handleChange}
-                value={formData.country}
-              />
+            <div className="tab-content grid-2col">
+              <div>
+                <label>Primary Address</label>
+                <input
+                  style={{ height: "100px" }}
+                  name="primaryAddress"
+                  onChange={handleChange}
+                  value={formData.primaryAddress}
+                />
+              </div>
+              <div>
+                <label>Secondary Address</label>
+                <input
+                  style={{ height: "100px" }}
+                  name="secondaryAddress"
+                  onChange={handleChange}
+                  value={formData.secondaryAddress}
+                />
+              </div>
+              <div>
+                <label>Pincode</label>
+                <input
+                  name="pincode"
+                  onChange={handleChange}
+                  value={formData.pincode}
+                />
+              </div>
+              <div>
+                <label>City</label>
+                <input
+                  name="city"
+                  onChange={handleChange}
+                  value={formData.city}
+                />
+              </div>
+              <div>
+                <label>State</label>
+                <input
+                  name="state"
+                  onChange={handleChange}
+                  value={formData.state}
+                />
+              </div>
+              <div>
+                <label>Country</label>
+                <input
+                  name="country"
+                  onChange={handleChange}
+                  value={formData.country}
+                />
+              </div>
             </div>
           )}
 
-          {/* Dependent Info Tab */}
-
-          {activeTab === "dependent" && (
-            <div className="tab-content dependent-info">
+          {/* Dependent Info */}
+          {/* {activeTab === "dependent" && (
+            <div className="tab-content">
               <h4>Spouse Info</h4>
               <p></p>
-              <input
-                name="spouseFirstName"
-                placeholder="Spouse First Name"
-                onChange={handleChange}
-                value={formData.spouseFirstName}
-              />
-              <input
-                name="spouseLastName"
-                placeholder="Spouse Last Name"
-                onChange={handleChange}
-                value={formData.spouseLastName}
-              />
-              <input
-                name="spouseEmail"
-                placeholder="Spouse Email"
-                onChange={handleChange}
-                value={formData.spouseEmail}
-              />
-              <input
-                type="date"
-                name="spouseDob"
-                onChange={handleChange}
-                value={formData.spouseDob}
-              />
-              <input
-                name="spousePhone"
-                placeholder="Spouse Phone"
-                onChange={handleChange}
-                value={formData.spousePhone}
-              />
+              <div className="grid-2col">
+                <div>
+                  <label>Spouse First Name</label>
+                  <input
+                    style={{ width: "218%" }}
+                    name="spouseFirstName"
+                    onChange={handleChange}
+                    value={formData.spouseFirstName}
+                  />
+                </div>
+                <div>
+                  <label>Spouse Last Name</label>
+                  <input
+                    style={{ width: "218%", marginLeft: "106%" }}
+                    name="spouseLastName"
+                    onChange={handleChange}
+                    value={formData.spouseLastName}
+                  />
+                </div>
+                <div>
+                  <label>Spouse Email</label>
+                  <input
+                    name="spouseEmail"
+                    onChange={handleChange}
+                    value={formData.spouseEmail}
+                  />
+                </div>
+                <div>
+                  <label>Spouse DOB</label>
+                  <input
+                    type="date"
+                    name="spouseDob"
+                    onChange={handleChange}
+                    value={formData.spouseDob}
+                  />
+                </div>
+                <div>
+                  <label>Spouse Phone</label>
+                  <input
+                    name="spousePhone"
+                    onChange={handleChange}
+                    value={formData.spousePhone}
+                  />
+                </div>
+              </div>
               <p></p>
               <h4>Child 1 Info</h4>
               <p></p>
-              <input
-                name="child1Name"
-                placeholder="Child 1 Name"
-                onChange={handleChange}
-                value={formData.child1Name}
-              />
-              <select
-                name="child1Gender"
-                onChange={handleChange}
-                value={formData.child1Gender}
-              >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-              <input
-                type="date"
-                name="child1Dob"
-                onChange={handleChange}
-                value={formData.child1Dob}
-              />
+              <div className="grid-2col">
+                <div>
+                  <label>Child 1 Name</label>
+                  <input
+                    name="child1Name"
+                    onChange={handleChange}
+                    value={formData.child1Name}
+                  />
+                </div>
+                <div>
+                  <label>Child 1 Gender</label>
+                  <select
+                    name="child1Gender"
+                    onChange={handleChange}
+                    value={formData.child1Gender}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Child 1 DOB</label>
+                  <input
+                    type="date"
+                    name="child1Dob"
+                    onChange={handleChange}
+                    value={formData.child1Dob}
+                  />
+                </div>
+              </div>
               <p></p>
               <h4>Child 2 Info</h4>
               <p></p>
-              <input
-                name="child2Name"
-                placeholder="Child 2 Name"
-                onChange={handleChange}
-                value={formData.child2Name}
-              />
-              <select
-                name="child2Gender"
-                onChange={handleChange}
-                value={formData.child2Gender}
-              >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-              <input
-                type="date"
-                name="child2Dob"
-                onChange={handleChange}
-                value={formData.child2Dob}
-              />
+              <div className="grid-2col">
+                <div>
+                  <label>Child 2 Name</label>
+                  <input
+                    name="child2Name"
+                    onChange={handleChange}
+                    value={formData.child2Name}
+                  />
+                </div>
+                <div>
+                  <label>Child 2 Gender</label>
+                  <select
+                    name="child2Gender"
+                    onChange={handleChange}
+                    value={formData.child2Gender}
+                  >
+                    <option value="">Select gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Child 2 DOB</label>
+                  <input
+                    type="date"
+                    name="child2Dob"
+                    onChange={handleChange}
+                    value={formData.child2Dob}
+                  />
+                </div>
+              </div>
               <p></p>
               <div className="form-footer">
-                <button
-                  style={{ backgroundColor: "#2b6cb0", height: "60px" }}
-                  type="submit"
-                >
+                <button type="submit">
                   {editingId ? "Update Employee" : "Add Employee"}
                 </button>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  style={{
-                    marginRight: "-18%",
-                    backgroundColor: "#9ca3af",
-                    color: "#fff",
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                  }}
+                <button type="button" onClick={closeModal}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )} */}
+
+          {activeTab === "dependent" && (
+            <div className="tab-content">
+              <h4>Spouse Info</h4>
+              <p></p>
+              <div className="grid-2col">
+                <div className="spouse" style={{ width: "200%" }}>
+                  <div>
+                    <label>Spouse First Name</label>
+                    <input
+                      name="spouseFirstName"
+                      onChange={handleChange}
+                      value={formData.spouseFirstName}
+                    />
+                  </div>
+                  <div>
+                    <label>Spouse Last Name</label>
+                    <input
+                      name="spouseLastName"
+                      onChange={handleChange}
+                      value={formData.spouseLastName}
+                    />
+                  </div>
+                </div>
+                <div
+                  className="spouse"
+                  style={{ width: "200%", marginLeft: "103%" }}
                 >
+                  <div>
+                    <label>Spouse Email</label>
+                    <input
+                      name="spouseEmail"
+                      onChange={handleChange}
+                      value={formData.spouseEmail}
+                    />
+                  </div>
+                  <div>
+                    <label>Spouse DOB</label>
+                    <input
+                      type="date"
+                      name="spouseDob"
+                      onChange={handleChange}
+                      value={formData.spouseDob}
+                    />
+                  </div>
+                </div>
+                <div className="spouse" style={{ width: "200%" }}>
+                  <div>
+                    <label>Spouse Phone</label>
+                    <input
+                      name="spousePhone"
+                      onChange={handleChange}
+                      value={formData.spousePhone}
+                    />
+                  </div>
+                </div>
+              </div>
+              <p></p>
+              <h4>Child 1 Info</h4>
+              <p></p>
+              <div className="grid-2col">
+                <div style={{ width: "200%" }}>
+                  <div>
+                    <label>Child 1 Name</label>
+                    <input
+                      name="child1Name"
+                      onChange={handleChange}
+                      value={formData.child1Name}
+                    />
+                  </div>
+                  <div>
+                    <label>Child 1 Gender</label>
+                    <select
+                      name="child1Gender"
+                      onChange={handleChange}
+                      value={formData.child1Gender}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                </div>
+                <div
+                  className="spouse"
+                  style={{ width: "200%", marginLeft: "103%" }}
+                >
+                  <div>
+                    <label>Child 1 DOB</label>
+                    <input
+                      type="date"
+                      name="child1Dob"
+                      onChange={handleChange}
+                      value={formData.child1Dob}
+                    />
+                  </div>
+                </div>
+              </div>
+              <p></p>
+              <h4>Child 2 Info</h4>
+              <p></p>
+              <div className="grid-2col">
+                <div className="spouse" style={{ width: "200%" }}>
+                  <div>
+                    <label>Child 2 Name</label>
+                    <input
+                      name="child2Name"
+                      onChange={handleChange}
+                      value={formData.child2Name}
+                    />
+                  </div>
+                  <div>
+                    <label>Child 2 Gender</label>
+                    <select
+                      name="child2Gender"
+                      onChange={handleChange}
+                      value={formData.child2Gender}
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                </div>
+                <div
+                  className="spouse"
+                  style={{ width: "200%", marginLeft: "103%" }}
+                >
+                  <div>
+                    <label>Child 2 DOB</label>
+                    <input
+                      type="date"
+                      name="child2Dob"
+                      onChange={handleChange}
+                      value={formData.child2Dob}
+                    />
+                  </div>
+                </div>
+              </div>
+              <p></p>
+              <div className="form-footer">
+                <button type="submit">
+                  {editingId ? "Update Employee" : "Add Employee"}
+                </button>
+                <button type="button" onClick={closeModal}>
                   Cancel
                 </button>
               </div>

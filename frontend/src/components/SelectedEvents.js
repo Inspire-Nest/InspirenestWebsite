@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getSelectedEventsApi } from "../api/endpoint";
+import {
+  getSelectedEventsApi,
+  getAllCalendarSelectedEventsApi,
+} from "../api/endpoint";
 
 const SelectedEvents = () => {
   const [events, setEvents] = useState([]);
@@ -9,14 +12,23 @@ const SelectedEvents = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const data = await getSelectedEventsApi();
-        setEvents(data);
+        // Fetch both APIs simultaneously
+        const [selectedEvents, calendarEvents] = await Promise.all([
+          getSelectedEventsApi(),
+          getAllCalendarSelectedEventsApi(),
+        ]);
+
+        // Combine both results
+        const mergedEvents = [...selectedEvents, ...calendarEvents];
+        setEvents(mergedEvents);
       } catch (err) {
+        console.error(err);
         setError("Failed to fetch selected events");
       } finally {
         setLoading(false);
       }
     };
+
     fetchEvents();
   }, []);
 
@@ -31,23 +43,53 @@ const SelectedEvents = () => {
           <tr>
             <th>Event Name</th>
             <th>Date</th>
-            <th>Required Gifts</th>
-            <th>Budget per Gift</th>
-            <th>Total Budget</th>
-            {/* <th>Selected At</th> */}
+            <th>Gift Proposal</th>
+            <th>Budget</th>
           </tr>
         </thead>
         <tbody>
-          {events.map((item) => (
-            <tr key={item._id}>
-              <td>{item.eventId?.nameOfEvent}</td>
-              <td>{new Date(item.eventId?.date).toLocaleDateString()}</td>
-              <td>{item.eventId?.requiredGifts}</td>
-              <td>₹{item.eventId?.budgetPerGift}</td>
-              <td>₹{item.eventId?.totalBudget}</td>
-              {/* <td>{new Date(item.selectedAt).toLocaleString()}</td> */}
+          {events.length > 0 ? (
+            events.map((item) => (
+              <tr key={item._id}>
+                {/* Event Name */}
+                <td>
+                  {item.eventId?.nameOfEvent || item.eventId?.eventName || "-"}
+                </td>
+
+                {/* Date */}
+                <td>
+                  {item.eventId?.date
+                    ? new Date(item.eventId.date).toLocaleDateString()
+                    : item.eventId?.eventDate || "-"}
+                </td>
+
+                {/* Gift Proposal */}
+                <td>
+                  {item.giftProposal ||
+                    item.eventId?.giftProposal ||
+                    item.eventId?.requiredGifts ||
+                    "-"}
+                </td>
+
+                {/* Budget */}
+                <td>
+                  {item.budget
+                    ? `₹${item.budget}`
+                    : item.eventId?.budgetPerGift
+                    ? `₹${item.eventId.budgetPerGift}`
+                    : item.eventId?.totalBudget
+                    ? `₹${item.eventId.totalBudget}`
+                    : "-"}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" style={{ textAlign: "center" }}>
+                No events found
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

@@ -5,11 +5,15 @@ import {
   saveGiftPreferencesApi,
   getCustomEventsApi,
   saveCustomEventApi,
+  saveCalendarSelectedEventsApi,
   saveSelectedEventsApi,
   getSelectedEventsApi,
   deleteCustomEvent,
   updateCustomEvent,
   getAllCalendarEventsApi,
+  getEmployeeLevels,
+  getEdibleGifts,
+  getCustomGifts,
 } from "../api/endpoint";
 import Select from "react-select";
 import { FaEdit, FaTrash } from "react-icons/fa";
@@ -43,14 +47,79 @@ const Subscription = () => {
     budgetPerGift: "",
     totalBudget: "",
   });
+  const [levels, setLevels] = useState([]); // store fetched levels
+  const [selectedLevel, setSelectedLevel] = useState(null); // selected level
   const [customEvents, setCustomEvents] = useState([]);
   const [selectedEventIds, setSelectedEventIds] = useState([]); // ✅ Track selected events
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [birthdaySubs, setBirthdaySubs] = useState([]);
-  const [workAnnSubs, setWorkAnnSubs] = useState([]);
-  const [weddingAnnSubs, setWeddingAnnSubs] = useState([]);
+  // 🎁 Separate states for gift preferences
+  const [birthdayPrefs, setBirthdayPrefs] = useState({});
+  const [workAnnPrefs, setWorkAnnPrefs] = useState({});
+  const [weddingAnnPrefs, setWeddingAnnPrefs] = useState({});
+  const levelOptions = [
+    { value: "L1", label: "L1" },
+    { value: "L2", label: "L2" },
+    { value: "L3", label: "L3" },
+  ];
+  const [edibleGiftOptions, setEdibleGiftOptions] = useState([]);
+  const [customGiftOptions, setCustomGiftOptions] = useState([]);
+
+  // persons enabled based on Standard Subscription
+  const getEnabledPersons = (occasionType) => {
+    return subscriptions
+      .filter((sub) => sub[occasionType] === true)
+      .map((sub) => sub.personType);
+  };
+  const resetGiftPreferences = () => {
+    setBirthdayPrefs({});
+    setWorkAnnPrefs({});
+    setWeddingAnnPrefs({});
+    setActiveSubTab("Birthday"); // go back to first gift tab
+  };
+
+  useEffect(() => {
+    const fetchGifts = async () => {
+      const edibleData = await getEdibleGifts();
+      const customData = await getCustomGifts();
+
+      // Convert backend data → dropdown label/value format
+      setEdibleGiftOptions(
+        edibleData.map((gift) => ({
+          value: gift._id, // actual DB id
+          label: `${gift.description} (${gift.eat_id})`, // display
+          description: gift.description,
+          eat_id: gift.eat_id,
+        }))
+      );
+
+      setCustomGiftOptions(
+        customData.map((gift) => ({
+          value: gift._id,
+          label: `${gift.description} (${gift.custom_id})`,
+          description: gift.description,
+          custom_id: gift.custom_id,
+        }))
+      );
+    };
+
+    fetchGifts();
+  }, []);
+  useEffect(() => {
+    const fetchLevels = async () => {
+      const data = await getEmployeeLevels(); // call API
+      // Transform the backend data into { value, label } format for <Select>
+      const options = data.map((item) => ({
+        value: item.level,
+        label: `Level ${item.level}`,
+      }));
+      setLevels(options);
+    };
+
+    fetchLevels();
+  }, []);
+
   useEffect(() => {
     fetchEvents(); // now it works
   }, []);
@@ -78,15 +147,33 @@ const Subscription = () => {
     );
   };
 
-  // ✅ Save selected events
-  const handleSaveSelectedEvents = async () => {
+  const handleSaveCustomSelectedEvents = async () => {
     try {
       await saveSelectedEventsApi(selectedEventIds);
-      alert("Selected events saved successfully!");
+      alert("Custom selected events saved successfully!");
       setSelectedEventIds([]); // reset
     } catch (err) {
-      console.error("Error saving selected events", err);
-      alert("Failed to save selected events.");
+      console.error("Error saving custom selected events", err);
+      alert("Failed to save custom selected events.");
+    }
+  };
+
+  const handleSaveCalendarSelectedEvents = async () => {
+    try {
+      const selectedEventsData = selectedEventIds.map((id) => ({
+        eventId: id,
+        giftProposal: giftInputs[id] || "",
+        budget: budgetInputs[id] || "",
+      }));
+
+      // ✅ Pass to API
+      await saveCalendarSelectedEventsApi(selectedEventsData);
+
+      alert("✅ Calendar events saved successfully!");
+      setSelectedEventIds([]);
+    } catch (err) {
+      console.error("Error saving selected calendar events", err);
+      alert("Failed to save calendar events.");
     }
   };
 
@@ -126,7 +213,6 @@ const Subscription = () => {
   const fetchSelectedEvents = async () => {
     try {
       const res = await getSelectedEventsApi();
-      // Map only eventId._id or eventId if not populated
       const ids = res.data.map((item) =>
         item.eventId?._id ? item.eventId._id : item.eventId
       );
@@ -187,12 +273,9 @@ const Subscription = () => {
     } else {
       updated.push({
         personType: person,
-        birthday: key === "birthday",
-        work_anniversary: key === "work_anniversary",
-        wedding_anniversary: key === "wedding_anniversary",
+        [key]: true,
       });
     }
-
     setSubscriptions(updated);
   };
 
@@ -203,6 +286,12 @@ const Subscription = () => {
     if (idx !== -1) {
       updated[idx][key] = value; // now array for edibleGift/customGift
       updated[idx][occasion] = true;
+
+      // ✅ ensure correct occasion flag is set
+      if (occasion === "birthday") updated[idx].birthday = true;
+      if (occasion === "work_anniversary") updated[idx].work_anniversary = true;
+      if (occasion === "wedding_anniversary")
+        updated[idx].wedding_anniversary = true;
     } else {
       updated.push({
         personType: person,
@@ -236,6 +325,21 @@ const Subscription = () => {
     }
   };
 
+  // ✅ Handle next navigation
+  // const handleNext = async () => {
+  //   if (activeSubTab === "Subscription") setActiveSubTab("Birthday");
+  //   else if (activeSubTab === "Birthday") {
+  //     await saveGiftPreferences("birthday");
+  //     setActiveSubTab("Work Anniversary");
+  //   } else if (activeSubTab === "Work Anniversary") {
+  //     await saveGiftPreferences("work_anniversary");
+  //     setActiveSubTab("Wedding Anniversary");
+  //   } else {
+  //     await saveGiftPreferences("wedding_anniversary");
+  //     alert("🎉 All preferences saved successfully!");
+  //   }
+  // };
+
   const handleNext = async () => {
     if (activeSubTab === "Subscription") {
       setActiveSubTab("Birthday");
@@ -246,28 +350,45 @@ const Subscription = () => {
       await saveGiftPreferences("work_anniversary");
       setActiveSubTab("Wedding Anniversary");
     } else {
+      // Last tab
       await saveGiftPreferences("wedding_anniversary");
-      alert("All preferences saved successfully!");
+
+      // 🎉 Reset all 3 tabs for new level selection
+      resetGiftPreferences();
+
+      alert(
+        "🎉 All gift preferences saved for this level! You can now select a new level."
+      );
     }
   };
 
   const saveGiftPreferences = async (occasionType) => {
-    const preferences = subscriptions
-      .filter((item) => item[occasionType])
-      .map((item) => ({
-        occasionType,
-        personType: item.personType,
-        whatsapp: item.whatsapp || false,
-        email: item.email || false,
-        edibleGift: item.edibleGift || "",
-        customGift: item.customGift || "",
-      }));
+    let dataToSave;
+    if (occasionType === "birthday") dataToSave = birthdayPrefs;
+    else if (occasionType === "work_anniversary") dataToSave = workAnnPrefs;
+    else dataToSave = weddingAnnPrefs;
+
+    if (!selectedLevel) {
+      alert("Please select subscription level before saving.");
+      return;
+    }
+
+    const payload = Object.entries(dataToSave).map(([personType, prefs]) => ({
+      occasionType,
+      personType,
+      whatsapp: prefs.whatsapp || false,
+      email: prefs.email || false,
+      edibleGift: prefs.edibleGift || [],
+      customGift: prefs.customGift || [],
+      // level: selectedLevel,
+      level: selectedLevel?.value || selectedLevel, // ✅ FIX
+    }));
 
     try {
-      await saveGiftPreferencesApi(preferences);
-      console.log(`${occasionType} preferences saved!`);
+      await saveGiftPreferencesApi(payload);
+      alert(`${occasionType.replace("_", " ")} preferences saved!`);
     } catch (err) {
-      console.error(`Error saving ${occasionType} preferences`, err);
+      console.error("Error saving preferences", err);
     }
   };
 
@@ -301,120 +422,201 @@ const Subscription = () => {
   const toggleMonth = (month) => {
     setExpandedMonth(expandedMonth === month ? null : month);
   };
+  const handleCalenderGiftChange = (eventId, value) => {
+    setGiftInputs((prev) => ({
+      ...prev,
+      [eventId]: value,
+    }));
+  };
+  // ✅ Gift preferences (separated by occasion)
+  const handleGiftChange = (occasion, person, key, value) => {
+    let stateUpdater;
+    let currentPrefs;
 
-  // Gift input handler
-  const handleGiftChange = (eventId, value) => {
-    setGiftInputs((prev) => ({ ...prev, [eventId]: value }));
+    if (occasion === "birthday") {
+      currentPrefs = { ...birthdayPrefs };
+      stateUpdater = setBirthdayPrefs;
+    } else if (occasion === "work_anniversary") {
+      currentPrefs = { ...workAnnPrefs };
+      stateUpdater = setWorkAnnPrefs;
+    } else {
+      currentPrefs = { ...weddingAnnPrefs };
+      stateUpdater = setWeddingAnnPrefs;
+    }
+
+    if (!currentPrefs[person]) currentPrefs[person] = {};
+    currentPrefs[person][key] = value;
+    stateUpdater(currentPrefs);
   };
 
   // Budget input handler
   const handleBudgetChange = (eventId, value) => {
-    setBudgetInputs((prev) => ({ ...prev, [eventId]: value }));
+    setBudgetInputs((prev) => ({
+      ...prev,
+      [eventId]: value,
+    }));
   };
 
-  const renderGiftTable = (occasionKey) => {
-    return (
-      <div className="subsc-gift-table-wrapper">
-        <h3 className="subsc-gift-heading">{activeSubTab}</h3>
-        <table className="subsc-gift-table">
-          <thead>
-            <tr>
-              <th>Person</th>
-              <th>Whatsapp</th>
-              <th>Email</th>
-              <th>Edible Gifts</th>
-              <th>Custom Gifts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {initialPeople.map((person) => {
-              const row =
-                subscriptions.find((s) => s.personType === person) || {};
-              return (
-                <tr key={person}>
-                  <td>{person}</td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={row.whatsapp || false}
-                      onChange={() =>
-                        handleSelectChange(
-                          person,
-                          occasionKey,
-                          "whatsapp",
-                          !row.whatsapp
-                        )
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={row.email || false}
-                      onChange={() =>
-                        handleSelectChange(
-                          person,
-                          occasionKey,
-                          "email",
-                          !row.email
-                        )
-                      }
-                    />
-                  </td>
+  // ✅ Render Gift Table
+  const renderGiftTable = (occasionType, prefs) => (
+    <div className="subsc-gift-table-wrapper">
+      {/* ✅ Place dropdown ABOVE the table title */}
 
-                  <td>
-                    <Select
-                      isMulti
-                      options={edibleGiftOptions.map((gift) => ({
-                        value: gift,
-                        label: gift,
-                      }))}
-                      value={(row.edibleGift || []).map((gift) => ({
-                        value: gift,
-                        label: gift,
-                      }))}
-                      onChange={(selected) =>
-                        handleSelectChange(
-                          person,
-                          occasionKey,
-                          "edibleGift",
-                          selected.map((s) => s.value)
-                        )
-                      }
-                      placeholder="Select edible gifts"
-                    />
-                  </td>
-                  <td>
-                    <Select
-                      isMulti
-                      options={customGiftOptions.map((gift) => ({
-                        value: gift,
-                        label: gift,
-                      }))}
-                      value={(row.customGift || []).map((gift) => ({
-                        value: gift,
-                        label: gift,
-                      }))}
-                      onChange={(selected) =>
-                        handleSelectChange(
-                          person,
-                          occasionKey,
-                          "customGift",
-                          selected.map((s) => s.value)
-                        )
-                      }
-                      placeholder="Select custom gifts"
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+      {/* {activeSubTab !== "Subscription" && (
+        <div
+          style={{
+            marginBottom: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <h3 className="subsc-gift-heading">{activeSubTab}</h3>
 
+          <Select
+            style={{ width: 150 }}
+            options={levels} // ✅ dynamic options from DB
+            value={selectedLevel}
+            onChange={(val) => setSelectedLevel(val)}
+            // value={
+            //   selectedLevel
+            //     ? { value: selectedLevel, label: `Level ${selectedLevel}` }
+            //     : null
+            // }
+            // onChange={(val) => setSelectedLevel(val)}
+            placeholder="Select Level"
+          />
+        </div>
+      )} */}
+
+      <table className="subsc-gift-table">
+        <thead>
+          <tr>
+            <th>Person</th>
+            <th>Whatsapp</th>
+            <th>Email</th>
+            <th>Edible Gifts</th>
+            <th>Custom Gifts</th>
+          </tr>
+        </thead>
+        {/* <tbody>
+          {initialPeople.map((person) => { */}
+        <tbody>
+          {getEnabledPersons(
+            occasionType === "birthday"
+              ? "birthday"
+              : occasionType === "work_anniversary"
+              ? "work_anniversary"
+              : "wedding_anniversary"
+          ).map((person) => {
+            const row = prefs[person] || {};
+            const isWhatsappSelected = row.whatsapp;
+            const isEmailSelected = row.email;
+            const hasEdibleGift = row.edibleGift && row.edibleGift.length > 0;
+            const hasCustomGift = row.customGift && row.customGift.length > 0;
+
+            return (
+              <tr key={person}>
+                <td>{person}</td>
+
+                {/* ✅ Whatsapp */}
+                <td className={isWhatsappSelected ? "selected-cell" : ""}>
+                  <input
+                    type="checkbox"
+                    checked={isWhatsappSelected || false}
+                    onChange={(e) =>
+                      handleGiftChange(
+                        occasionType,
+                        person,
+                        "whatsapp",
+                        e.target.checked
+                      )
+                    }
+                  />
+                </td>
+
+                {/* ✅ Email */}
+                <td className={isEmailSelected ? "selected-cell" : ""}>
+                  <input
+                    type="checkbox"
+                    checked={isEmailSelected || false}
+                    onChange={(e) =>
+                      handleGiftChange(
+                        occasionType,
+                        person,
+                        "email",
+                        e.target.checked
+                      )
+                    }
+                  />
+                </td>
+
+                {/* ✅ Edible Gifts */}
+                <td className={hasEdibleGift ? "selected-cell" : ""}>
+                  <Select
+                    className="gift-select"
+                    isMulti
+                    options={edibleGiftOptions}
+                    value={(row.edibleGift || []).map((g) => ({
+                      value: g.id,
+                      label: `${g.description} (${g.eat_id})`,
+                      id: g.id,
+                      eat_id: g.eat_id,
+                      description: g.description,
+                    }))}
+                    onChange={(selected) =>
+                      handleGiftChange(
+                        occasionType,
+                        person,
+                        "edibleGift",
+                        selected.map((s) => ({
+                          id: s.value,
+                          eat_id: s.eat_id,
+                          description: s.description,
+                        }))
+                      )
+                    }
+                    placeholder="Select edible gifts"
+                  />
+                </td>
+
+                {/* ✅ Custom Gifts */}
+                <td className={hasCustomGift ? "selected-cell" : ""}>
+                  <Select
+                    className="gift-select"
+                    isMulti
+                    options={customGiftOptions}
+                    value={(row.customGift || []).map((g) => ({
+                      value: g.id,
+                      label: `${g.description} (${g.custom_id})`,
+                      id: g.id,
+                      custom_id: g.custom_id,
+                      description: g.description,
+                    }))}
+                    onChange={(selected) =>
+                      handleGiftChange(
+                        occasionType,
+                        person,
+                        "customGift",
+                        selected.map((s) => ({
+                          id: s.value,
+                          custom_id: s.custom_id,
+                          description: s.description,
+                        }))
+                      )
+                    }
+                    placeholder="Select custom gifts"
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // ✅ Main render table switch
   const renderTable = () => {
     if (activeSubTab === "Subscription") {
       return (
@@ -439,7 +641,6 @@ const Subscription = () => {
                     <td>
                       <input
                         type="checkbox"
-                        className="subsc-checkbox"
                         checked={row.birthday || false}
                         onChange={() =>
                           handleCheckboxChange(person, "birthday")
@@ -449,7 +650,6 @@ const Subscription = () => {
                     <td>
                       <input
                         type="checkbox"
-                        className="subsc-checkbox"
                         checked={row.work_anniversary || false}
                         onChange={() =>
                           handleCheckboxChange(person, "work_anniversary")
@@ -459,7 +659,6 @@ const Subscription = () => {
                     <td>
                       <input
                         type="checkbox"
-                        className="subsc-checkbox"
                         checked={row.wedding_anniversary || false}
                         onChange={() =>
                           handleCheckboxChange(person, "wedding_anniversary")
@@ -473,10 +672,11 @@ const Subscription = () => {
           </table>
         </div>
       );
-    } else {
-      const key = activeSubTab.toLowerCase().replace(/ /g, "_");
-      return renderGiftTable(key);
-    }
+    } else if (activeSubTab === "Birthday")
+      return renderGiftTable("birthday", birthdayPrefs);
+    else if (activeSubTab === "Work Anniversary")
+      return renderGiftTable("work_anniversary", workAnnPrefs);
+    else return renderGiftTable("wedding_anniversary", weddingAnnPrefs);
   };
 
   return (
@@ -501,6 +701,26 @@ const Subscription = () => {
       {/* Sub Tabs */}
       {activeTopTab === "Standard Subscription" && (
         <>
+          {/* Level Dropdown under Sub Tabs */}
+          {activeSubTab !== "Subscription" && (
+            <div
+              style={{
+                marginTop: "15px",
+                marginBottom: "15px",
+                display: "flex",
+                gap: "15px",
+                alignItems: "center",
+              }}
+            >
+              <Select
+                style={{ width: 180 }}
+                options={levels}
+                value={selectedLevel}
+                onChange={(val) => setSelectedLevel(val)}
+                placeholder="Select Level"
+              />
+            </div>
+          )}
           <div className="subsc-sub-tabs">
             {subTabs.map((tab) => (
               <div
@@ -587,7 +807,7 @@ const Subscription = () => {
                                     type="text"
                                     value={giftInputs[event._id] || ""}
                                     onChange={(e) =>
-                                      handleGiftChange(
+                                      handleCalenderGiftChange(
                                         event._id,
                                         e.target.value
                                       )
@@ -632,7 +852,7 @@ const Subscription = () => {
               {/* Save Selected Events Button */}
               <button
                 className="save-selected-events-btn"
-                onClick={handleSaveSelectedEvents}
+                onClick={handleSaveCalendarSelectedEvents}
                 disabled={selectedEventIds.length === 0}
                 style={{
                   marginTop: "20px",
@@ -766,7 +986,7 @@ const Subscription = () => {
             {customEvents.length > 0 && (
               <button
                 className="custom-save-selected-btn"
-                onClick={handleSaveSelectedEvents}
+                onClick={handleSaveCustomSelectedEvents}
                 disabled={selectedEventIds.length === 0}
                 style={{
                   color: "white",

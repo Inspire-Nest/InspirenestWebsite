@@ -6,10 +6,10 @@
 //   relation: { type: String, enum: ["employee", "spouse", "child"], required: true },
 //   companyName: { type: String, required: true },
 
-//   eventType: { 
-//     type: String, 
-//     enum: ["Birthday", "Work Anniversary", "Wedding Anniversary"], 
-//     required: true 
+//   eventType: {
+//     type: String,
+//     enum: ["Birthday", "Work Anniversary", "Wedding Anniversary"],
+//     required: true
 //   },
 //   eventDate: { type: Date, required: true },
 //   templateImage: { type: String, required: true }, // path to template
@@ -23,15 +23,23 @@
 const mongoose = require("mongoose");
 
 const upcomingEventSchema = new mongoose.Schema({
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
+  employee: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee",
+    required: true,
+  },
   employeeName: { type: String, required: true },
-  relation: { type: String, enum: ["employee", "spouse", "child"], required: true },
+  relation: {
+    type: String,
+    enum: ["employee", "spouse", "child"],
+    required: true,
+  },
   companyName: { type: String, required: true },
 
-  eventType: { 
-    type: String, 
-    enum: ["Birthday", "Work Anniversary", "Wedding Anniversary"], 
-    required: true 
+  eventType: {
+    type: String,
+    enum: ["Birthday", "Work Anniversary", "Wedding Anniversary"],
+    required: true,
   },
   eventDate: { type: Date, required: true },
   templateImage: { type: String, required: true }, // path to template
@@ -40,9 +48,15 @@ const upcomingEventSchema = new mongoose.Schema({
 
   // ✅ Separate statuses
   emailStatus: { type: String, enum: ["pending", "sent"], default: "pending" },
-  whatsappStatus: { type: String, enum: ["pending", "sent"], default: "pending" },
+  whatsappStatus: {
+    type: String,
+    enum: ["pending", "sent"],
+    default: "pending",
+  },
+  editedTemplateImage: { type: String, default: null },
+  editedAt: { type: Date, default: null },
 
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model("UpcomingEvent", upcomingEventSchema);

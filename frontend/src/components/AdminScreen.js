@@ -183,12 +183,12 @@ const AdminScreen = () => {
           active={activeTab === "administrators"}
           onClick={() => setActiveTab("administrators")}
         />
-        <TabButton
+        {/* <TabButton
           label="Catalog"
           icon={<FiGift />}
           active={activeTab === "catalog"}
           onClick={() => setActiveTab("catalog")}
-        />
+        /> */}
         <TabButton
           label="Events Calendar"
           icon={<FiCalendar />}
@@ -331,7 +331,7 @@ const AdminScreen = () => {
       {activeTab === "events" && (
         <div style={{ display: "flex", gap: "20px" }}>
           {/* Default Calendar Events */}
-          <div style={leftCardStyle}>
+          {/* <div style={leftCardStyle}>
             <h3 style={{ color: "rgb(91 33 182 / var(--tw-text-opacity, 1))" }}>
               Default Calendar Events
             </h3>
@@ -381,7 +381,7 @@ const AdminScreen = () => {
                 Click to view the complete event calendar data
               </p>
             )}
-          </div>
+          </div> */}
 
           {/* Add Custom Event */}
           <div style={rightCardStyle}>
@@ -499,6 +499,8 @@ const leftCardStyle = {
   boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
 };
 const rightCardStyle = {
+  // marginLeft: "15%",
+  // marginRight: "15%",
   flex: 1,
   borderRadius: "10px",
   padding: "20px",

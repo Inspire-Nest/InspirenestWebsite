@@ -59,11 +59,11 @@ const Navigation = ({ userRole }) => {
         icon: <FaPalette />,
         path: "/hr/customization",
       },
-      {
-        name: "SMTP Settings",
-        icon: <MdMailOutline />,
-        path: "/hr/settings",
-      },
+      // {
+      //   name: "SMTP Settings",
+      //   icon: <MdMailOutline />,
+      //   path: "/hr/settings",
+      // },
       {
         name: "My Selected Events",
         icon: <MdEmojiEvents />,

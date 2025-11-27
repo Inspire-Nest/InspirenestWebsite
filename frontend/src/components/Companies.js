@@ -7,6 +7,9 @@ import {
   deleteCompanyAPI,
   getCompanyByIdAPI,
   getCurrentUserAPI,
+  getCompanyTypes,
+  getCountries,
+  getIndustries,
 } from "../api/endpoint";
 import { FaEye, FaEdit, FaTrash, FaFilter, FaArrowLeft } from "react-icons/fa";
 
@@ -19,6 +22,8 @@ const Companies = () => {
   const [filterCity, setFilterCity] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [companyTypes, setCompanyTypes] = useState([]);
+  const [industries, setIndustries] = useState([]);
   const [formData, setFormData] = useState({
     country: "",
     customerName: "",
@@ -47,6 +52,34 @@ const Companies = () => {
     setFilterCity("");
     setFilterStatus("");
   };
+
+  const [countries, setCountries] = useState([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const data = await getCountries();
+      setCountries(data);
+    };
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      const data = await getIndustries();
+      console.log("Industries from API:", data); // 👈 for debugging
+      setIndustries(data);
+    };
+    fetchIndustries();
+  }, []);
+
+  useEffect(() => {
+    const fetchCompanyTypes = async () => {
+      const data = await getCompanyTypes();
+      console.log("Company types:", data); // 👈 Check in console
+      setCompanyTypes(data);
+    };
+    fetchCompanyTypes();
+  }, []);
 
   const fetchCompanies = async () => {
     try {
@@ -119,6 +152,8 @@ const Companies = () => {
         companyType: "",
         industry: "",
         gstrNumber: "",
+        question: "", // ✅ new field
+
         isActive: true,
         address: {
           street1: "",
@@ -364,35 +399,67 @@ const Companies = () => {
           <div className="form-section">
             <h3>Company Information</h3>
             <div className="form-grid">
-              <select
-                name="country"
-                value={formData.country}
-                onChange={handleFormChange}
-              >
-                <option value="">Select country</option>
-                <option value="India">India</option>
-              </select>
+              <div>
+                {/* <label>
+                  Country<span className="required">*</span>
+                </label> */}
+                <select
+                  style={{ width: "103%" }}
+                  name="country"
+                  required
+                  value={formData.country}
+                  onChange={handleFormChange}
+                >
+                  <option value="">Select country</option>
+                  {countries.map((c) => (
+                    <option key={c._id} value={c.countryName}>
+                      {c.countryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <input
                 name="customerName"
                 placeholder="Company Name"
                 value={formData.customerName}
                 onChange={handleFormChange}
               />
-              <select
-                name="companyType"
-                value={formData.companyType}
-                onChange={handleFormChange}
-              >
-                <option value="">Select type</option>
-                <option value="Parent Company">Parent Company</option>
-                <option value="Individual Unit">Individual Unit</option>
-              </select>
-              <input
-                name="industry"
-                placeholder="Industry"
-                value={formData.industry}
-                onChange={handleFormChange}
-              />
+              <div>
+                {/* <label>
+                  Company Type<span className="required">*</span>
+                </label> */}
+                <select
+                  name="companyType"
+                  value={formData.companyType}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="">Select type</option>
+                  {companyTypes.map((type) => (
+                    <option key={type._id} value={type.companyType}>
+                      {type.companyType}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                {/* <label>
+        Industry<span className="required">*</span>
+      </label> */}
+                <select
+                  name="industry"
+                  required
+                  value={formData.industry}
+                  onChange={handleFormChange}
+                >
+                  <option value="">Select Industry</option>
+                  {industries.map((ind) => (
+                    <option key={ind._id} value={ind.industryName}>
+                      {ind.industryName}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <input
                 name="gstrNumber"
                 placeholder="GSTR Number"
@@ -486,6 +553,15 @@ const Companies = () => {
                 value={formData.pointOfContact.customerId}
                 onChange={handleFormChange}
               /> */}
+              <select
+                name="question"
+                value={formData.question}
+                onChange={handleFormChange}
+              >
+                <option value="">Select Question Type</option>
+                <option value="categories of list">Categories of List</option>
+                <option value="all employees">All Employees</option>
+              </select>
 
               <input
                 name="pointOfContact.customerId"

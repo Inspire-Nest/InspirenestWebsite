@@ -811,15 +811,16 @@ h4 {
   color: #000;
   border: 1px solid #ccc;
   border-radius: 5px;
+  height: 45px;
 }
 
-.form-footer {
+/* .form-footer {
   text-align: right;
   margin-top: 20px;
   display: flex;
   gap: 20%;
-  margin-left: 10%;
-}
+  margin-left: 7%;
+} */
 .modal-header {
   display: flex;
   color: black;
@@ -1075,16 +1076,42 @@ label {
   overflow: hidden;
   background-color: white;
   border: 1px solid #cce0ff;
+  table-layout: fixed;
 }
 
 .subsc-table th,
 .subsc-table td {
   text-align: left;
-  padding: 12px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid #e3edff;
   color: #000;
   font-weight: 500;
   font-size: 20px;
+  word-wrap: break-word;
+}
+
+/* ✅ Make columns evenly spaced */
+.subsc-table th:nth-child(1),
+.subsc-table td:nth-child(1) {
+  width: 11%;
+}
+
+.subsc-table th:nth-child(2),
+.subsc-table td:nth-child(2),
+.subsc-table th:nth-child(3),
+.subsc-table td:nth-child(3),
+.subsc-table th:nth-child(4),
+.subsc-table td:nth-child(4) {
+  width: 21%;
+  text-align: center;
+}
+
+/* Checkbox alignment */
+.subsc-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #2b6cb0;
+  cursor: pointer;
 }
 
 .subsc-table th {
@@ -1157,15 +1184,32 @@ label {
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #cce0ff;
+  table-layout: fixed;
 }
 
 .subsc-gift-table th,
 .subsc-gift-table td {
-  padding: 12px 15px;
+  /* padding: 12px 15px; */
   border-bottom: 1px solid #e3edff;
-  text-align: left;
+  /* text-align: left; */
   font-size: 18px;
   color: #000;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  vertical-align: middle;
+}
+
+/* Highlight for previously selected items */
+.subsc-gift-table td.selected-cell {
+  background-color: #e6f7ff; /* light blue */
+  transition: background-color 0.3s ease;
+}
+
+/* Optional: highlight dropdowns when selected */
+.gift-select .css-1pahdxg-control {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 1px #1890ff !important;
 }
 
 .subsc-gift-table th {
@@ -1177,6 +1221,45 @@ label {
   padding: 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
+}
+
+.subsc-gift-table th:nth-child(1) {
+  width: 20%;
+} /* Person */
+.subsc-gift-table th:nth-child(2),
+.subsc-gift-table th:nth-child(3) {
+  width: 15%;
+} /* Whatsapp, Email */
+.subsc-gift-table th:nth-child(4),
+.subsc-gift-table th:nth-child(5) {
+  width: 25%;
+}
+
+/* Freeze select width */
+.gift-select {
+  width: 220px; /* fixed width — adjust if needed */
+  min-width: 200px;
+  max-width: 220px;
+}
+
+/* Prevent react-select from auto-expanding */
+.gift-select .react-select__control {
+  width: 100% !important;
+  min-width: 200px !important;
+  max-width: 220px !important;
+}
+
+/* Ensure input inside doesn’t stretch */
+.gift-select .react-select__value-container {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Prevent long text from pushing width */
+.gift-select .react-select__multi-value {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .custom-container {
@@ -2355,7 +2438,323 @@ input[type="checkbox"] {
   border-collapse: collapse;
 }
 
-.event-table th, .event-table td {
+.event-table th,
+.event-table td {
   padding: 8px;
   border: 1px solid #ddd;
+}
+
+.employee-modal {
+  max-width: 800px;
+  margin: auto;
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.employee-modal h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1e3a8a;
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.tab-buttons button {
+  flex: 1;
+  padding: 10px;
+  background: #e5e7eb;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 6px;
+  margin-right: 8px;
+}
+
+.tab-buttons button.active {
+  background: #2b6cb0;
+  color: #fff;
+}
+
+/* ==== Grid Layouts ==== */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Equal-width columns */
+  gap: 20px 30px;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+.spouse {
+  width: 200%;
+}
+
+.grid-2col div {
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* ensures equal column width */
+}
+
+/* ==== Form Elements ==== */
+.employee-modal label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #333;
+}
+/* Ensure inputs take full width of their container */
+.employee-modal input,
+.employee-modal select {
+  width: 100%;
+  min-width: 0; /* prevents overflow */
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.employee-modal input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.employee-modal input:focus,
+.employee-modal select:focus {
+  border-color: #2b6cb0;
+  outline: none;
+  box-shadow: 0 0 3px rgba(43, 108, 176, 0.4);
+}
+
+/* ==== Headings ==== */
+.employee-modal h1 {
+  text-align: center;
+  color: #2b6cb0;
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.employee-modal h4 {
+  margin-top: 25px;
+  margin-bottom: 10px;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+/* ==== Tabs ==== */
+.tab-buttons {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.tab-buttons button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-buttons button:hover {
+  background: #d1d5db;
+}
+
+.tab-buttons .active {
+  background: #2563eb;
+  color: white;
+}
+
+/* ==== Modal Layout ==== */
+.employee-modal {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  max-width: 850px;
+  margin: 40px auto;
+  overflow-y: auto;
+  max-height: 90vh;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* ==== Footer Buttons ==== */
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+  margin-left: 7%;
+}
+
+.form-footer button {
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  /* height: 200px; */
+  transition: background 0.3s ease;
+}
+
+.form-footer button:hover {
+  background: #1e40af;
+}
+
+/* Cancel button */
+.form-footer button[type="button"] {
+  background: #9ca3af;
+}
+
+.form-footer button[type="button"]:hover {
+  background: #6b7280;
+}
+
+/* ==== Responsive ==== */
+@media (max-width: 768px) {
+  .grid-2col {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .employee-modal {
+    padding: 20px;
+    max-width: 95%;
+  }
+}
+
+/* Common grid layout for Dependent Info */
+.grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 equal columns */
+  gap: 20px 30px; /* row-gap, column-gap */
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Make label stay above inputs */
+.grid-2col div {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Uniform label styling */
+.grid-2col label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 18px;
+  color: #333;
+}
+
+/* Make inputs and selects same size */
+.grid-2col input,
+.grid-2col select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.grid-2col input:focus,
+.grid-2col select:focus {
+  border-color: #2b6cb0;
+  outline: none;
+  box-shadow: 0 0 3px rgba(43, 108, 176, 0.4);
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .grid-2col {
+    grid-template-columns: 1fr; /* single column in mobile */
+  }
+}
+
+.required {
+  color: red;
+  margin-left: 2px;
+}
+
+/* ============================================================
+   OPS VIEW - MODAL PROFESSIONAL STYLING
+   ============================================================ */
+
+.opsview-details-modal .ant-modal-content {
+  border-radius: 14px !important;
+  padding: 0 !important;
+  background: #ffffff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.opsview-details-modal .ant-modal-header {
+  border-bottom: none !important;
+  padding: 20px 28px !important;
+}
+
+.opsview-details-modal .ant-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.opsview-details-modal .ant-modal-body {
+  padding: 10px 30px 30px !important;
+}
+
+/* Tabs styling */
+.opsview-details-modal .ant-tabs-nav {
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.opsview-details-modal .ant-tabs-tab {
+  font-size: 15px;
+  padding: 10px 14px !important;
+  border-radius: 8px;
+}
+
+.opsview-details-modal .ant-tabs-tab-active {
+  background: #eef5ff;
+  border-radius: 8px;
+}
+
+/* Tab content text */
+.opsview-details-modal .tab-content p {
+  margin: 10px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.opsview-details-modal .tab-content b {
+  color: #262626;
+}
+
+/* Image styling inside status tab */
+.opsview-details-modal .gift-image {
+  margin-top: 8px;
+  border-radius: 8px;
+  width: 130px;
+  border: 1px solid #e5e5e5;
+}
+
+/* Make modal close button nicer */
+.opsview-details-modal .ant-modal-close {
+  top: 18px;
+  right: 20px;
 }

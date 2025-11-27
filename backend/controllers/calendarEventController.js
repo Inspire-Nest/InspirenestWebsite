@@ -91,6 +91,42 @@ function formatEventDate(dateStr) {
 }
 
 // ✅ Upload Excel and Save
+// exports.uploadEvents = async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(400).json({ message: "No file uploaded" });
+//     }
+
+//     const workbook = xlsx.readFile(req.file.path);
+//     const sheetName = workbook.SheetNames[0];
+//     const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], {
+//       defval: "",
+//     });
+
+//     const formattedData = sheetData
+//       .filter((row) => row.__EMPTY_1 && row.__EMPTY_1 !== "Event Name")
+//       .map((row) => ({
+//         eventDate: formatEventDate(row.__EMPTY || ""),
+//         eventName: row.__EMPTY_1 || "",
+//         scope: row.__EMPTY_2 || "",
+//         category: row.__EMPTY_3 || "",
+//         suggestedActivities: row.__EMPTY_4 || "",
+//       }));
+
+//     await CalendarEvent.insertMany(formattedData);
+
+//     res.status(201).json({
+//       message: "Excel uploaded and data saved successfully",
+//       count: formattedData.length,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Error uploading calendar events",
+//       error: err.message,
+//     });
+//   }
+// };
+
 exports.uploadEvents = async (req, res) => {
   try {
     if (!req.file) {
@@ -103,16 +139,36 @@ exports.uploadEvents = async (req, res) => {
       defval: "",
     });
 
-    const formattedData = sheetData
-      .filter((row) => row.__EMPTY_1 && row.__EMPTY_1 !== "Event Name")
-      .map((row) => ({
-        eventDate: formatEventDate(row.__EMPTY || ""),
-        eventName: row.__EMPTY_1 || "",
-        scope: row.__EMPTY_2 || "",
-        category: row.__EMPTY_3 || "",
-        suggestedActivities: row.__EMPTY_4 || "",
-      }));
+    const formattedData = [];
 
+    for (let i = 0; i < sheetData.length; i++) {
+      const row = sheetData[i];
+
+      const eventDate = row["Event Date"]?.toString().trim();
+      const eventName = row["Event Name"] || "";
+      const scope = row["Scope"] || "";
+      const category = row["Category"] || "";
+      const suggestedActivities = row["Suggested Activities"] || "";
+
+      // ❌ Validate format: must be DD-MM-YYYY
+      if (!moment(eventDate, "DD-MM-YYYY", true).isValid()) {
+        return res.status(400).json({
+          message: `Invalid date format in row ${
+            i + 2
+          }. Expected DD-MM-YYYY but got "${eventDate}".`,
+        });
+      }
+
+      formattedData.push({
+        eventDate,
+        eventName,
+        scope,
+        category,
+        suggestedActivities,
+      });
+    }
+
+    // Save to DB
     await CalendarEvent.insertMany(formattedData);
 
     res.status(201).json({

@@ -13,6 +13,7 @@ exports.createCompany = async (req, res) => {
       gstrNumber,
       isActive,
       address,
+      question,
       pointOfContact,
     } = req.body;
 
@@ -25,6 +26,7 @@ exports.createCompany = async (req, res) => {
       gstrNumber,
       isActive,
       address,
+      question,
       pointOfContact,
     });
 

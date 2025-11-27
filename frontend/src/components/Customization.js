@@ -124,7 +124,7 @@ const Customization = () => {
               background: "#fff",
               padding: "30px",
               borderRadius: "8px",
-              minWidth: "300px",
+              maxWidth: "500px",
             }}
           >
             <h4>Upload New Template</h4>
@@ -139,7 +139,7 @@ const Customization = () => {
               <select
                 value={eventType}
                 onChange={(e) => setEventType(e.target.value)}
-                style={{ marginBottom: "10px", width: "100%" }}
+                style={{ marginBottom: "10px", width: "100%", color: "black" }}
               >
                 <option value="">Select Event Type</option>
                 <option value="Birthday">Birthday</option>
