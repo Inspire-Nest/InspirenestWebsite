@@ -108,9 +108,232 @@ const mongoose = require("mongoose");
 
 // Get all employees for a specific company
 
+// exports.createEmployee = async (req, res) => {
+//   try {
+//     let {
+//       companyId,
+//       firstName,
+//       lastName,
+//       employeeLevel,
+//       managerName,
+//       managerEmail,
+//       email,
+//       phoneNumber,
+//       whatsappNumber,
+//       gender,
+//       maritalStatus,
+//       dateOfBirth,
+//       dateOfJoining,
+//       anniversaryDate,
+//       primaryAddress,
+//       secondaryAddress,
+//       pincode,
+//       city,
+//       state,
+//       country,
+//       spouseFirstName,
+//       spouseLastName,
+//       spouseDob,
+//       spouseEmail,
+//       spousePhone,
+//       child1Name,
+//       child1Gender,
+//       child1Dob,
+//       child2Name,
+//       child2Gender,
+//       child2Dob,
+//     } = req.body;
+
+//     if (typeof companyId === "object" && companyId._id) {
+//       companyId = companyId._id;
+//     }
+
+//     if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
+//       return res.status(400).json({ message: "Invalid company ID." });
+//     }
+
+//     // ✅ Auto-generate Employee Code
+//     const lastEmployee = await Employee.findOne()
+//       .sort({ createdAt: -1 })
+//       .select("employeeCode");
+//     let nextCode = "EMP001";
+
+//     if (lastEmployee && lastEmployee.employeeCode) {
+//       const lastNum = parseInt(
+//         lastEmployee.employeeCode.replace("EMP", ""),
+//         10
+//       );
+//       nextCode = `EMP${String(lastNum + 1).padStart(3, "0")}`;
+//     }
+
+//     // ✅ Create new employee
+//     const newEmployee = new Employee({
+//       company: companyId,
+//       firstName,
+//       lastName,
+//       employeeCode: nextCode,
+//       employeeLevel,
+//       managerName,
+//       managerEmail,
+//       email,
+//       phoneNumber,
+//       whatsappNumber,
+//       gender,
+//       maritalStatus,
+//       dateOfBirth,
+//       dateOfJoining,
+//       anniversaryDate,
+//       primaryAddress,
+//       secondaryAddress,
+//       pincode,
+//       city,
+//       state,
+//       country,
+//       child1Name,
+//       child1Gender,
+//       child1Dob,
+//       child2Name,
+//       child2Gender,
+//       child2Dob,
+//     });
+
+//     if (maritalStatus?.toLowerCase() === "married") {
+//       newEmployee.spouseFirstName = spouseFirstName;
+//       newEmployee.spouseLastName = spouseLastName;
+//       newEmployee.spouseDob = spouseDob;
+//       newEmployee.spouseEmail = spouseEmail;
+//       newEmployee.spousePhone = spousePhone;
+//     }
+
+//     await newEmployee.save();
+
+//     return res.status(201).json({
+//       message: "Employee created successfully",
+//       employee: newEmployee,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Employee creation failed",
+//       error: err.message,
+//     });
+//   }
+// };
+
+// ✅ Create Employee (backend/controllers/employeeController.js)
+// exports.createEmployee = async (req, res) => {
+//   try {
+//     const {
+//       companyId,
+//       firstName,
+//       lastName,
+//       employeeLevel,
+//       managerName,
+//       managerEmail,
+//       email,
+//       phoneNumber,
+//       whatsappNumber,
+//       gender,
+//       maritalStatus,
+//       dateOfBirth,
+//       dateOfJoining,
+//       anniversaryDate,
+//       primaryAddress,
+//       secondaryAddress,
+//       pincode,
+//       city,
+//       state,
+//       country,
+//       spouseFirstName,
+//       spouseLastName,
+//       spouseEmail,
+//       spousePhoneNumber,
+//       child1Name,
+//       child1Gender,
+//       child1Dob,
+//       child2Name,
+//       child2Gender,
+//       child2Dob,
+//     } = req.body;
+
+//     if (!companyId) {
+//       return res.status(400).json({ message: "Company ID is required." });
+//     }
+
+//     // ✅ Find last employee for this company
+//     const lastEmployee = await Employee.findOne({ company: companyId }).sort({
+//       _id: -1,
+//     });
+//     let employeeCode = "EMP001";
+//     if (lastEmployee && lastEmployee.employeeCode) {
+//       const lastNumber = parseInt(
+//         lastEmployee.employeeCode.replace("EMP", ""),
+//         10
+//       );
+//       employeeCode = `EMP${String(lastNumber + 1).padStart(3, "0")}`;
+//     }
+
+//     // ✅ Handle marital info
+//     const spouseInfo =
+//       maritalStatus === "Married"
+//         ? {
+//             spouseFirstName,
+//             spouseLastName,
+//             spouseEmail,
+//             spousePhoneNumber,
+//           }
+//         : {};
+
+//     // ✅ Create new employee
+//     const newEmployee = new Employee({
+//       company: companyId,
+//       firstName,
+//       lastName,
+//       employeeCode,
+//       employeeLevel,
+//       managerName,
+//       managerEmail,
+//       email,
+//       phoneNumber,
+//       whatsappNumber,
+//       gender,
+//       maritalStatus,
+//       dateOfBirth,
+//       dateOfJoining,
+//       anniversaryDate,
+//       primaryAddress,
+//       secondaryAddress,
+//       pincode,
+//       city,
+//       state,
+//       country,
+//       ...spouseInfo,
+//       child1Name,
+//       child1Gender,
+//       child1Dob,
+//       child2Name,
+//       child2Gender,
+//       child2Dob,
+//     });
+
+//     await newEmployee.save();
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Employee created successfully",
+//       employee: newEmployee,
+//     });
+//   } catch (error) {
+//     console.error("Error creating employee:", error);
+//     return res
+//       .status(500)
+//       .json({ message: "Server error", error: error.message });
+//   }
+// };
+const GiftPreference = require("../models/GiftPreference"); // add this import
+
 exports.createEmployee = async (req, res) => {
   try {
-    let {
+    const {
       companyId,
       firstName,
       lastName,
@@ -133,9 +356,8 @@ exports.createEmployee = async (req, res) => {
       country,
       spouseFirstName,
       spouseLastName,
-      spouseDob,
       spouseEmail,
-      spousePhone,
+      spousePhoneNumber,
       child1Name,
       child1Gender,
       child1Dob,
@@ -144,34 +366,40 @@ exports.createEmployee = async (req, res) => {
       child2Dob,
     } = req.body;
 
-    if (typeof companyId === "object" && companyId._id) {
-      companyId = companyId._id;
+    if (!companyId) {
+      return res.status(400).json({ message: "Company ID is required." });
     }
 
-    if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
-      return res.status(400).json({ message: "Invalid company ID." });
-    }
-
-    // ✅ Auto-generate Employee Code
-    const lastEmployee = await Employee.findOne()
-      .sort({ createdAt: -1 })
-      .select("employeeCode");
-    let nextCode = "EMP001";
-
-    if (lastEmployee && lastEmployee.employeeCode) {
-      const lastNum = parseInt(
+    // ✅ Find last employee code
+    const lastEmployee = await Employee.findOne({ company: companyId }).sort({
+      _id: -1,
+    });
+    let employeeCode = "EMP001";
+    if (lastEmployee?.employeeCode) {
+      const lastNumber = parseInt(
         lastEmployee.employeeCode.replace("EMP", ""),
         10
       );
-      nextCode = `EMP${String(lastNum + 1).padStart(3, "0")}`;
+      employeeCode = `EMP${String(lastNumber + 1).padStart(3, "0")}`;
     }
 
-    // ✅ Create new employee
+    // ✅ Fetch gift preference for this level
+    const levelPreference = await GiftPreference.findOne({
+      level: employeeLevel,
+    });
+
+    // ✅ Handle marital info
+    const spouseInfo =
+      maritalStatus === "Married"
+        ? { spouseFirstName, spouseLastName, spouseEmail, spousePhoneNumber }
+        : {};
+
+    // ✅ Create employee with gifts included (if found)
     const newEmployee = new Employee({
       company: companyId,
       firstName,
       lastName,
-      employeeCode: nextCode,
+      employeeCode,
       employeeLevel,
       managerName,
       managerEmail,
@@ -189,33 +417,41 @@ exports.createEmployee = async (req, res) => {
       city,
       state,
       country,
+      ...spouseInfo,
       child1Name,
       child1Gender,
       child1Dob,
       child2Name,
       child2Gender,
       child2Dob,
-    });
 
-    if (maritalStatus?.toLowerCase() === "married") {
-      newEmployee.spouseFirstName = spouseFirstName;
-      newEmployee.spouseLastName = spouseLastName;
-      newEmployee.spouseDob = spouseDob;
-      newEmployee.spouseEmail = spouseEmail;
-      newEmployee.spousePhone = spousePhone;
-    }
+      edibleGifts:
+        levelPreference?.edibleGift?.map((g) => ({
+          id: g.id,
+          eat_id: g.eat_id,
+          description: g.description,
+        })) || [],
+
+      customGifts:
+        levelPreference?.customGift?.map((g) => ({
+          id: g.id,
+          custom_id: g.custom_id,
+          description: g.description,
+        })) || [],
+    });
 
     await newEmployee.save();
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "Employee created successfully",
       employee: newEmployee,
     });
-  } catch (err) {
-    res.status(500).json({
-      message: "Employee creation failed",
-      error: err.message,
-    });
+  } catch (error) {
+    console.error("Error creating employee:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
@@ -350,6 +586,9 @@ exports.bulkUploadEmployees = async (req, res) => {
 
       // ✅ Generate next Employee Code automatically
       const nextCode = `EMP${String(baseNumber + i + 1).padStart(3, "0")}`;
+      const levelPreference = await GiftPreference.findOne({
+        level: data["Employee Level"],
+      });
 
       employees.push({
         company: companyId,
@@ -379,6 +618,20 @@ exports.bulkUploadEmployees = async (req, res) => {
         city: data["City"],
         state: data["State"],
         country: data["Country"],
+
+        edibleGifts:
+          levelPreference?.edibleGift?.map((g) => ({
+            id: g.id,
+            eat_id: g.eat_id,
+            description: g.description,
+          })) || [],
+
+        customGifts:
+          levelPreference?.customGift?.map((g) => ({
+            id: g.id,
+            custom_id: g.custom_id,
+            description: g.description,
+          })) || [],
 
         // ✅ Add spouse details if married
         spouseFirstName:
@@ -680,5 +933,34 @@ exports.getUpcomingEvents = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to fetch events", error: err.message });
+  }
+};
+
+exports.getEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Employee ID is required" });
+    }
+
+    const employee = await Employee.findById(id)
+      .populate("company") // if you want company details
+      .exec();
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.status(200).json({
+      message: "Employee details fetched successfully",
+      data: employee,
+    });
+  } catch (error) {
+    console.error("Error fetching employee:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };

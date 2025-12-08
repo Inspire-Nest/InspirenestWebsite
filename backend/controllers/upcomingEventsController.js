@@ -266,21 +266,44 @@ function isDateWithinNextDays(dateObj, days) {
 
 //   await event.save();
 // }
-async function saveUpcomingEvent(
-  employee,
-  personName,
-  relation,
-  company,
-  eventType,
-  eventDate,
-  template
-) {
+// ✅ Updated dynamic saveUpcomingEvent
+// ✅ Updated dynamic saveUpcomingEvent (handles all relations automatically)
+async function saveUpcomingEvent(employee, personName, relation, company, eventType, eventDate, template) {
   if (!template) return;
 
-  // 🔹 Company subscription check
-  const subscription = await SubscriptionPreference.findOne({ company: company._id });
+  // 🔹 Normalize relation for consistent matching
+  const normalizedRelation = (relation || "employee").toLowerCase();
+
+  // 🔹 Try finding the most relevant subscription dynamically
+  let subscription = await SubscriptionPreference.findOne({
+    company: company._id,
+    personType: { $regex: new RegExp(normalizedRelation, "i") },
+  });
+
+  // 🔹 Fallback: if no exact match, try for generic terms
+  if (!subscription) {
+    if (normalizedRelation.includes("child") || normalizedRelation.includes("kid")) {
+      subscription = await SubscriptionPreference.findOne({
+        company: company._id,
+        personType: { $regex: /child|kid/i },
+      });
+    } else if (normalizedRelation.includes("spouse") || normalizedRelation.includes("wife") || normalizedRelation.includes("husband")) {
+      subscription = await SubscriptionPreference.findOne({
+        company: company._id,
+        personType: { $regex: /spouse|wife|husband/i },
+      });
+    } else {
+      subscription = await SubscriptionPreference.findOne({
+        company: company._id,
+        personType: { $regex: /employee/i },
+      });
+    }
+  }
+
+  // 🚫 If still not found, skip
   if (!subscription) return;
 
+  // ✅ Check if event type is enabled for that person type
   const eventEnabled =
     (eventType === "Birthday" && subscription.birthday) ||
     (eventType === "Work Anniversary" && subscription.work_anniversary) ||
@@ -289,16 +312,22 @@ async function saveUpcomingEvent(
   if (!eventEnabled) return;
 
   const normalizedType = normalizeEventType(eventType);
-  const normalizedRelation = relation ? relation.toLowerCase() : "";
 
+  // 🎁 Fetch matching gift preference dynamically
   const giftPref = await GiftPreference.findOne({
     occasionType: normalizedType,
     personType: { $regex: new RegExp(normalizedRelation, "i") },
   });
 
-  if (!giftPref) return;
+  // ⚙️ If not found, fallback to generic type (e.g., “Employee” gift)
+  if (!giftPref) {
+    await GiftPreference.findOne({
+      occasionType: normalizedType,
+      personType: { $regex: /employee/i },
+    });
+  }
 
-  // 🔹 Prevent duplicates
+  // 🔹 Prevent duplicate events
   const exists = await UpcomingEvent.findOne({
     employee: employee._id,
     relation: normalizedRelation,
@@ -307,7 +336,7 @@ async function saveUpcomingEvent(
   });
   if (exists) return;
 
-  // 🔹 Save event with separate statuses for email and WhatsApp
+  // ✅ Save event
   const event = new UpcomingEvent({
     employee: employee._id,
     employeeName: personName,
@@ -316,10 +345,11 @@ async function saveUpcomingEvent(
     eventType,
     eventDate: normalizeDate(eventDate),
     templateImage: template.image,
-    email: giftPref.email ? employee.email : null,
-    whatsappNumber: giftPref.whatsapp ? employee.whatsappNumber : null,
-    emailStatus: giftPref.email ? "pending" : null,
-    whatsappStatus: giftPref.whatsapp ? "pending" : null,
+    employeeLevel: employee.employeeLevel,
+    email: giftPref?.email ? employee.email : null,
+    whatsappNumber: giftPref?.whatsapp ? employee.whatsappNumber : null,
+    emailStatus: giftPref?.email ? "pending" : null,
+    whatsappStatus: giftPref?.whatsapp ? "pending" : null,
   });
 
   await event.save();
@@ -333,6 +363,148 @@ function getTemplateByType(templates, eventType, index) {
 }
 
 // ✅ Main API — check upcoming events
+// exports.checkUpcomingEvents = async (req, res) => {
+//   try {
+//     const employees = await Employee.find().populate("company");
+//     const templates = await Template.find();
+//     const counters = { Birthday: 0, "Work Anniversary": 0, "Wedding Anniversary": 0 };
+
+//     for (const emp of employees) {
+//       const company = emp.company;
+//       if (!company) continue;
+
+//       // 🎂 Employee Birthday
+//       if (emp.dateOfBirth && isDateWithinNextDays(emp.dateOfBirth, 7)) {
+//         const dobThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.dateOfBirth.getMonth(),
+//           emp.dateOfBirth.getDate()
+//         );
+//         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
+//         await saveUpcomingEvent(
+//           emp,
+//           `${emp.firstName} ${emp.lastName}`,
+//           "employee",
+//           company,
+//           "Birthday",
+//           dobThisYear,
+//           template
+//         );
+//       }
+
+//       // 💼 Work Anniversary
+//       if (emp.dateOfJoining && isDateWithinNextDays(emp.dateOfJoining, 7)) {
+//         const dojThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.dateOfJoining.getMonth(),
+//           emp.dateOfJoining.getDate()
+//         );
+//         const template = getTemplateByType(
+//           templates,
+//           "Work Anniversary",
+//           counters["Work Anniversary"]++
+//         );
+//         await saveUpcomingEvent(
+//           emp,
+//           `${emp.firstName} ${emp.lastName}`,
+//           "employee",
+//           company,
+//           "Work Anniversary",
+//           dojThisYear,
+//           template
+//         );
+//       }
+
+//       // 💍 Wedding Anniversary
+//       if (emp.anniversaryDate && isDateWithinNextDays(emp.anniversaryDate, 7)) {
+//         const wedThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.anniversaryDate.getMonth(),
+//           emp.anniversaryDate.getDate()
+//         );
+//         const template = getTemplateByType(
+//           templates,
+//           "Wedding Anniversary",
+//           counters["Wedding Anniversary"]++
+//         );
+//         await saveUpcomingEvent(
+//           emp,
+//           `${emp.firstName} ${emp.lastName}`,
+//           "spouse",
+//           company,
+//           "Wedding Anniversary",
+//           wedThisYear,
+//           template
+//         );
+//       }
+
+//       // 👩‍❤️‍👨 Spouse Birthday
+//       if (emp.spouseDob && isDateWithinNextDays(emp.spouseDob, 7)) {
+//         const spouseDobThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.spouseDob.getMonth(),
+//           emp.spouseDob.getDate()
+//         );
+//         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
+//         await saveUpcomingEvent(
+//           emp,
+//           emp.spouseName || "Spouse",
+//           "spouse",
+//           company,
+//           "Birthday",
+//           spouseDobThisYear,
+//           template
+//         );
+//       }
+
+//       // 👶 Child1 Birthday
+//       if (emp.child1Dob && isDateWithinNextDays(emp.child1Dob, 7)) {
+//         const c1DobThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.child1Dob.getMonth(),
+//           emp.child1Dob.getDate()
+//         );
+//         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
+//         await saveUpcomingEvent(
+//           emp,
+//           emp.child1Name || "Kid - 1",
+//           "child",
+//           company,
+//           "Birthday",
+//           c1DobThisYear,
+//           template
+//         );
+//       }
+
+//       // 👧 Child2 Birthday
+//       if (emp.child2Dob && isDateWithinNextDays(emp.child2Dob, 7)) {
+//         const c2DobThisYear = new Date(
+//           new Date().getFullYear(),
+//           emp.child2Dob.getMonth(),
+//           emp.child2Dob.getDate()
+//         );
+//         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
+//         await saveUpcomingEvent(
+//           emp,
+//           emp.child2Name || "Kid - 2",
+//           "child",
+//           company,
+//           "Birthday",
+//           c2DobThisYear,
+//           template
+//         );
+//       }
+//     }
+
+//     res.json({
+//       message: "✅ Upcoming events stored successfully based on subscriptions & gift preferences!",
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "❌ Failed to check upcoming events" });
+//   }
+// };
+// ✅ Main API — check upcoming events
 exports.checkUpcomingEvents = async (req, res) => {
   try {
     const employees = await Employee.find().populate("company");
@@ -345,135 +517,55 @@ exports.checkUpcomingEvents = async (req, res) => {
 
       // 🎂 Employee Birthday
       if (emp.dateOfBirth && isDateWithinNextDays(emp.dateOfBirth, 7)) {
-        const dobThisYear = new Date(
-          new Date().getFullYear(),
-          emp.dateOfBirth.getMonth(),
-          emp.dateOfBirth.getDate()
-        );
+        const dobThisYear = new Date(new Date().getFullYear(), emp.dateOfBirth.getMonth(), emp.dateOfBirth.getDate());
         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
-        await saveUpcomingEvent(
-          emp,
-          `${emp.firstName} ${emp.lastName}`,
-          "employee",
-          company,
-          "Birthday",
-          dobThisYear,
-          template
-        );
+        await saveUpcomingEvent(emp, `${emp.firstName} ${emp.lastName}`, "employee", company, "Birthday", dobThisYear, template);
       }
 
-      // 💼 Work Anniversary
+      // 💼 Employee Work Anniversary
       if (emp.dateOfJoining && isDateWithinNextDays(emp.dateOfJoining, 7)) {
-        const dojThisYear = new Date(
-          new Date().getFullYear(),
-          emp.dateOfJoining.getMonth(),
-          emp.dateOfJoining.getDate()
-        );
-        const template = getTemplateByType(
-          templates,
-          "Work Anniversary",
-          counters["Work Anniversary"]++
-        );
-        await saveUpcomingEvent(
-          emp,
-          `${emp.firstName} ${emp.lastName}`,
-          "employee",
-          company,
-          "Work Anniversary",
-          dojThisYear,
-          template
-        );
+        const dojThisYear = new Date(new Date().getFullYear(), emp.dateOfJoining.getMonth(), emp.dateOfJoining.getDate());
+        const template = getTemplateByType(templates, "Work Anniversary", counters["Work Anniversary"]++);
+        await saveUpcomingEvent(emp, `${emp.firstName} ${emp.lastName}`, "employee", company, "Work Anniversary", dojThisYear, template);
       }
 
-      // 💍 Wedding Anniversary
+      // 💍 Employee Wedding Anniversary
       if (emp.anniversaryDate && isDateWithinNextDays(emp.anniversaryDate, 7)) {
-        const wedThisYear = new Date(
-          new Date().getFullYear(),
-          emp.anniversaryDate.getMonth(),
-          emp.anniversaryDate.getDate()
-        );
-        const template = getTemplateByType(
-          templates,
-          "Wedding Anniversary",
-          counters["Wedding Anniversary"]++
-        );
-        await saveUpcomingEvent(
-          emp,
-          `${emp.firstName} ${emp.lastName}`,
-          "spouse",
-          company,
-          "Wedding Anniversary",
-          wedThisYear,
-          template
-        );
+        const wedThisYear = new Date(new Date().getFullYear(), emp.anniversaryDate.getMonth(), emp.anniversaryDate.getDate());
+        const template = getTemplateByType(templates, "Wedding Anniversary", counters["Wedding Anniversary"]++);
+        // ✅ relation changed from "spouse" → "employee"
+        await saveUpcomingEvent(emp, `${emp.firstName} ${emp.lastName}`, "employee", company, "Wedding Anniversary", wedThisYear, template);
       }
 
       // 👩‍❤️‍👨 Spouse Birthday
       if (emp.spouseDob && isDateWithinNextDays(emp.spouseDob, 7)) {
-        const spouseDobThisYear = new Date(
-          new Date().getFullYear(),
-          emp.spouseDob.getMonth(),
-          emp.spouseDob.getDate()
-        );
+        const spouseDobThisYear = new Date(new Date().getFullYear(), emp.spouseDob.getMonth(), emp.spouseDob.getDate());
         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
-        await saveUpcomingEvent(
-          emp,
-          emp.spouseName || "Spouse",
-          "spouse",
-          company,
-          "Birthday",
-          spouseDobThisYear,
-          template
-        );
+        await saveUpcomingEvent(emp, emp.spouseName || "Spouse", "spouse", company, "Birthday", spouseDobThisYear, template);
       }
 
-      // 👶 Child1 Birthday
+      // 👶 Child 1 Birthday
       if (emp.child1Dob && isDateWithinNextDays(emp.child1Dob, 7)) {
-        const c1DobThisYear = new Date(
-          new Date().getFullYear(),
-          emp.child1Dob.getMonth(),
-          emp.child1Dob.getDate()
-        );
+        const c1DobThisYear = new Date(new Date().getFullYear(), emp.child1Dob.getMonth(), emp.child1Dob.getDate());
         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
-        await saveUpcomingEvent(
-          emp,
-          emp.child1Name || "Kid - 1",
-          "child",
-          company,
-          "Birthday",
-          c1DobThisYear,
-          template
-        );
+        await saveUpcomingEvent(emp, emp.child1Name || "Kid - 1", "child", company, "Birthday", c1DobThisYear, template);
       }
 
-      // 👧 Child2 Birthday
+      // 👧 Child 2 Birthday
       if (emp.child2Dob && isDateWithinNextDays(emp.child2Dob, 7)) {
-        const c2DobThisYear = new Date(
-          new Date().getFullYear(),
-          emp.child2Dob.getMonth(),
-          emp.child2Dob.getDate()
-        );
+        const c2DobThisYear = new Date(new Date().getFullYear(), emp.child2Dob.getMonth(), emp.child2Dob.getDate());
         const template = getTemplateByType(templates, "Birthday", counters.Birthday++);
-        await saveUpcomingEvent(
-          emp,
-          emp.child2Name || "Kid - 2",
-          "child",
-          company,
-          "Birthday",
-          c2DobThisYear,
-          template
-        );
+        await saveUpcomingEvent(emp, emp.child2Name || "Kid - 2", "child", company, "Birthday", c2DobThisYear, template);
       }
     }
 
-    res.json({
-      message: "✅ Upcoming events stored successfully based on subscriptions & gift preferences!",
-    });
+    res.json({ message: "✅ Upcoming events stored successfully based on subscriptions & gift preferences!" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "❌ Failed to check upcoming events" });
   }
 };
+
 // GET all upcoming events
 exports.getAllUpcomingEvents = async (req, res) => {
   try {
