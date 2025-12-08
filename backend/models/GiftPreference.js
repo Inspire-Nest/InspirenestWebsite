@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const giftPreferenceSchema = new mongoose.Schema({
+    companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+  },
   occasionType: {
     type: String,
     enum: ["birthday", "wedding_anniversary", "work_anniversary"],
@@ -10,6 +15,13 @@ const giftPreferenceSchema = new mongoose.Schema({
     type: String, // e.g., 'Employee', 'Spouse', 'Kid - 1'
     required: true,
   },
+
+  // ✅ New field - Subscription Level
+  level: {
+    type: String, // Example values: "Basic", "Standard", "Premium", etc.
+    required: true,
+  },
+
   whatsapp: {
     type: Boolean,
     default: false,
@@ -18,14 +30,20 @@ const giftPreferenceSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  edibleGift: {
-    type: [String],
-    default: "",
-  },
-  customGift: {
-    type: [String],
-    default: "",
-  },
+  edibleGift: [
+    {
+      eat_id: { type: String, required: true },
+      description: { type: String, required: true }
+    }
+  ],
+
+  // ⭐ Store custom gifts: custom_id + description
+  customGift: [
+    {
+      custom_id: { type: String, required: true },
+      description: { type: String, required: true }
+    }
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

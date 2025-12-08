@@ -37,7 +37,12 @@ const companySchema = new mongoose.Schema({
   industry: { type: String, required: true },
   gstrNumber: { type: String, required: true },
   isActive: { type: Boolean, default: true },
-
+  question: { type: String, required: false },
+  categoryLevels: [
+    {
+      type: String
+    }
+  ],
   address: {
     street1: { type: String, required: true },
     street2: { type: String },
