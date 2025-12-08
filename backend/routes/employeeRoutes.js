@@ -6,6 +6,7 @@ const {
   updateEmployee,
   deleteEmployee,
   getUpcomingEvents,
+  getEmployeeById,
 } = require("../controllers/employeeController");
 const multer = require("multer");
 const path = require("path");
@@ -29,5 +30,6 @@ router.get("/employees/companies/:companyId", getEmployeesByCompany);
 router.put("/:id", updateEmployee);
 router.delete("/:id", deleteEmployee);
 router.get("/upcoming-events", getUpcomingEvents);
+router.get("/employees/:id", getEmployeeById);
 
 module.exports = router;
